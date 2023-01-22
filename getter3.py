@@ -7,7 +7,7 @@ logger = logging.getLogger("getter")
 register = 35123
 register1 = 35121
 # File name of the requestor
-requestor = "getter1.py"
+requestor = "getter2.py"
 
 # Add the register address and requestor name to the queue
 add_register(register, requestor)

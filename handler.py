@@ -2,6 +2,14 @@ import threading
 from queue import Queue
 from pymodbus.client import ModbusSerialClient as ModbusClient
 from pymodbus.exceptions import ModbusException
+import logging
+
+logger = logging.getLogger("getter")
+logger.setLevel(logging.INFO)
+
+# Create a StreamHandler to redirect the output to the console
+stream_handler = logging.StreamHandler()
+logger.addHandler(stream_handler)
 
 # Modbus connection parameters
 port = '/dev/ttyUSB0'
@@ -31,6 +39,7 @@ def read_register(register):
     except ModbusException as e:
         print(e)
         return None
+        modbus_lock.release()
     finally:
         modbus_lock.release()
 

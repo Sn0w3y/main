@@ -1,6 +1,4 @@
 from handler import add_register
-import threading
-from queue import Queue
 
 # Register address to read from
 register = 35122
@@ -8,7 +6,7 @@ register = 35122
 requestor = "getter.py"
 
 # Add the register address and requestor name to the queue
-add_register(register, requestor)
-
-register_queue.join()
-thread.join()
+try:
+    add_register(register, requestor)
+except Exception as e:
+    print("An error occurred while trying to add the register: ", e)

@@ -33,8 +33,6 @@ def read_register(register):
         return None
     finally:
         modbus_lock.release()
-        client.close()
-
 
 def add_register(register, requestor):
     register_queue.put((register, requestor))

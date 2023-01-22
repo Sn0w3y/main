@@ -3,6 +3,7 @@ from queue import Queue
 from pymodbus.client import ModbusSerialClient as ModbusClient
 from pymodbus.exceptions import ModbusException
 import logging
+import time
 
 logger = logging.getLogger("getter")
 logger.setLevel(logging.INFO)
@@ -54,7 +55,9 @@ def read_thread():
         # Read data from the Modbus device
         data = read_register(register)
         # Print the data with requestor name
-        print("Data from register {} requested by {}: {}".format(register, requestor, data))
+        logger.info("Data from register {} requested by {}: {}".format(register, requestor, data))
+        # Wait for 1 second before reading the next register address
+        time.sleep(1)
         # Mark the task as done
         register_queue.task_done()
 

@@ -1,4 +1,5 @@
 import logging
+import time
 from handler import add_register
 
 logger = logging.getLogger("getter")
@@ -10,5 +11,7 @@ register1 = 35121
 requestor = "getter1.py"
 
 # Add the register address and requestor name to the queue
-add_register(register, requestor)
-add_register(register1, requestor)
+while True:
+    add_register(register, requestor)
+    add_register(register1, requestor)
+    time.sleep(1)

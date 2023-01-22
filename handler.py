@@ -1,56 +1,56 @@
-import asyncio
+import threading
+from queue import Queue
 from pymodbus.client import ModbusSerialClient as ModbusClient
-from asyncio import Queue
-from multiprocessing import Array
+from pymodbus.exceptions import ModbusException
 
-# create a modbus client instance
-client = ModbusClient(method='rtu', port='/dev/ttyUSB0', baudrate=9600)
+# Modbus connection parameters
+port = '/dev/ttyUSB0'
+baudrate = 9600
+stopbits = 1
+parity = 'N'
+unit_id = 247
 
-# create a shared memory array
-register_address = Array('i', [0], lock=True)
+# Create a queue to store register addresses and requestor names
+register_queue = Queue()
 
-async def modbus_handler(register_address_value, result_queue):
-    print(f"register address value: {register_address_value}")
-    # Connect to the modbus device
-    await client.connect()
-    if client.connect():
-        print("Connected to the device successfully.")
-        result = await client.read_holding_registers(register_address_value, 1, unit=247)
-        await result_queue.put(result.registers[0])
-    else:
-        print("Failed to connect to the device.")
-    # Close the connection
-    await client.close()
+# Create Modbus client
+client = ModbusClient(method='rtu', port=port, baudrate=baudrate, stopbits=stopbits, parity=parity, timeout=1)
+
+# Connect to the Modbus device
+connection = client.connect()
+
+modbus_lock = threading.Lock()
+
+def read_register(register):
+    modbus_lock.acquire()
+    try:
+        # Read data from the specified register
+        result = client.read_holding_registers(register, 1, unit=unit_id)
+        # Return the data as a list
+        return result.registers
+    except ModbusException as e:
+        print(e)
+        return None
+    finally:
+        modbus_lock.release()
+        client.close()
 
 
-async def main():
-    # create the result queue
-    result_queue = Queue()
-    # start the listener task
-    task = asyncio.create_task(listener(result_queue))
+def add_register(register, requestor):
+    register_queue.put((register, requestor))
+
+# Create a thread to continuously read data from the Modbus device
+def read_thread():
     while True:
-        while register_address[0] == 0:
-            await asyncio.sleep(0.1)
-        # get the register address from the shared memory array
-        register_address_value = register_address[0]
-        # reset the register address value
-        register_address[0] = 0
-        # start a new task for the register address
-        asyncio.create_task(modbus_handler(register_address_value, result_queue))
+        # Get the next register address and requestor name from the queue
+        register, requestor = register_queue.get()
+        # Read data from the Modbus device
+        data = read_register(register)
+        # Print the data with requestor name
+        print("Data from register {} requested by {}: {}".format(register, requestor, data))
+        # Mark the task as done
+        register_queue.task_done()
 
-
-async def listener(result_queue):
-    while True:
-        try:
-            # try to get the result immediately
-            result = await result_queue.get_nowait()
-            # process the result
-            print(result)
-        except asyncio.QueueEmpty:
-            # if the queue is empty, wait for a while
-            await asyncio.sleep(0.1)
-
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+# Start the thread
+thread = threading.Thread(target=read_thread)
+thread.start()

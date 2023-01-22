@@ -2,10 +2,8 @@ from handler import add_register
 import threading
 from queue import Queue
 
-register_queue = Queue()
-
 # Register address to read from
-register = 35121
+register = 35122
 # File name of the requestor
 requestor = "getter.py"
 

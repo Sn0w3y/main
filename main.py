@@ -1,6 +1,6 @@
 import worker
-import script
-import ReadTask
+import TaskCreator
+import connector
 import time
 
 # Set the slave address

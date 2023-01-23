@@ -1,40 +1,29 @@
-import queue
-import threading
 import time
 
 class ModbusWorker:
     def __init__(self):
-        self.tasks_queue = queue.Queue()
+        #initialize the worker
         self.read_tasks = []
-        self.write_tasks = []
-        self.stopwatch = time.perf_counter()
-
     def add_read_task(self, task):
         self.read_tasks.append(task)
 
-    def add_write_task(self, task):
-        self.write_tasks.append(task)
-
-    def on_before_process_image(self):
-        self.stopwatch = time.perf_counter()
-        next_read_tasks = self.get_next_read_tasks()
-        next_write_tasks = self.get_next_write_tasks()
-        for task in next_read_tasks + next_write_tasks:
-            self.tasks_queue.put(task)
-
     def get_next_read_tasks(self):
         # Logic to collect next set of read tasks
-        return []
+        self.read_tasks.sort(key=lambda x: x.priority)
+        next_tasks = []
+        for task in self.read_tasks:
+            if (time.perf_counter() - self.stopwatch) + task.get_execute_duration() < cycle_time:
+                next_tasks.append(task)
+            else:
+                break
+        self.read_tasks = [task for task in self.read_tasks if task not in next_tasks]
+        return next_tasks
 
-    def get_next_write_tasks(self):
-        # Logic to collect next set of write tasks
-        return []
-
-    def on_execute_write(self):
-        while not self.tasks_queue.empty():
-            task = self.tasks_queue.get()
-            task.execute()
-
+# Add the task to the worker
 worker = ModbusWorker()
+worker.add_read_task(task1)
+worker.add_read_task(task2)
+
+# Collect the next set of tasks and execute them
 worker.on_before_process_image()
 worker.on_execute_write()
